@@ -1,0 +1,25 @@
+{
+  "name": "authservice",
+  "version": "1.0.0",
+  "description": "An authentication service that can handle upto 10000 request per second",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Manprabesh Boruah",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.2",
+    "nodemailer": "^8.0.7",
+    "nodemon": "^3.1.14",
+    "redis": "^5.12.1"
+  }
+}
