@@ -11,7 +11,7 @@ app.use(cors());
 app.use(cookieParser());
 
 import authRouter from "./routes/auth-router.js";
-app.use("/api/v1",authRouter);
+app.use("/api/v1/auth",authRouter);
 
 app.get("/api/v1/hello",(req,res)=>{
   console.log(req)
