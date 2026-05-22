@@ -4,6 +4,7 @@ import { getRedisClient } from "../config/redis.js";
 import bcrypt from "bcrypt";
 import { getTransporter, sendOTP } from "../config/mail.js";
 import jwt from "jsonwebtoken";
+const isProduction = process.env.NODE_ENV === "production";
 
 export const registerController = async (req, res) => {
   try {
@@ -164,7 +165,7 @@ export const verifyOtpController = async (req, res) => {
     // =========================
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: "none",
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -281,7 +282,7 @@ export const loginController = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       sameSite: "none",
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -358,7 +359,7 @@ export const logoutController = async (req, res) => {
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       sameSite: "none"
     });
 
