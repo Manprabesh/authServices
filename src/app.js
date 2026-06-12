@@ -9,7 +9,7 @@ app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
-
+app.set("trust proxy", true);
 import authRouter from "./routes/auth-router.js";
 app.use("/api/v1/auth",authRouter);
 
