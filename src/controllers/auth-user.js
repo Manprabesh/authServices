@@ -205,6 +205,7 @@ export const verifyOtpController = async (req, res) => {
       success: true,
       message: "User registered successfully",
       accessToken: accessToken,
+      refreshToken: refreshToken,
       user: {
         id: user._id,
         email: user.email
@@ -324,7 +325,7 @@ export const loginController = async (req, res) => {
       message: "Login successful",
 
       accessToken,
-
+      refreshToken: refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -350,9 +351,7 @@ export const logoutController = async (req, res) => {
     // =========================
     // GET REFRESH TOKEN
     // =========================
-
-    const refreshToken =
-      req.cookies.refreshToken;
+    const refreshToken = req.cookies?.refreshToken || req.headers.authorization?.replace("Bearer ", "");
 
     if (!refreshToken) {
       return res.status(400).json({
@@ -419,9 +418,7 @@ export const refreshTokenController = async (req, res) => {
     // =========================
     // GET REFRESH TOKEN
     // =========================
-
-    const refreshToken =
-      req.cookies.refreshToken;
+    const refreshToken = req.cookies?.refreshToken || req.headers.authorization?.replace("Bearer ", "");
 
     if (!refreshToken) {
       return res.status(401).json({
