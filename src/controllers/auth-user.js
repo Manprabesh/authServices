@@ -5,13 +5,23 @@ import bcrypt from "bcrypt";
 import { getTransporter, sendOTP } from "../config/mail.js";
 import jwt from "jsonwebtoken";
 const isProduction = process.env.NODE_ENV === "production";
+import { sgMail } from "../config/mail.js";
 
 export const registerController = async (req, res) => {
   try {
 
     const { email, password } = req.body;
 
+    console.log(req.body);
+    console.log(req.headers);
+    console.log("ip address", req.ip);
     // Basic validation
+    console.log({
+      ip: req.ip,
+      ips: req.ips,
+      forwarded: req.headers["x-forwarded-for"],
+      remoteAddress: req.socket.remoteAddress
+    });
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -37,15 +47,21 @@ export const registerController = async (req, res) => {
       .randomInt(100000, 999999)
       .toString();
 
+    console.log(verificationCode)
     // Save in Redis
     // Key expires in 5 minutes
     const client = await getRedisClient()
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      10
+    );
 
     await client.set(
       `verify:${email}`,
       JSON.stringify({
         email,
-        password,
+        hashedPassword,
         verificationCode
       }),
       {
@@ -55,12 +71,18 @@ export const registerController = async (req, res) => {
 
     //Send OTP to email
     const message = sendOTP(email, verificationCode);
-    const info = await getTransporter().sendMail(message);
-    console.log("email info ", info)
-    return res.status(200).json({
-      success: true,
-      message: "OTP send successfully",
-    });
+    const emailResponse = await sgMail.send(message);
+
+    if (emailResponse[0].statusCode == 202) {
+
+      console.log("email response", emailResponse);
+      return res.status(200).json({
+        success: true,
+        message: "OTP send successfully",
+      });
+    } else {
+      throw new Error("Email not sent")
+    }
 
   } catch (error) {
 
@@ -78,6 +100,7 @@ export const verifyOtpController = async (req, res) => {
   try {
 
     const { email, otp } = req.body;
+    console.log("---", req.body)
 
     // Validation
     if (!email || !otp) {
@@ -92,6 +115,7 @@ export const verifyOtpController = async (req, res) => {
     const storedData = await client.get(
       `verify:${email}`
     );
+    console.log("-------", storedData)
 
     // OTP expired or not found
     if (!storedData) {
@@ -101,8 +125,10 @@ export const verifyOtpController = async (req, res) => {
       });
     }
 
+
     const parsedData = JSON.parse(storedData);
 
+    console.log("parsed data", parsedData)
     // Verify OTP
     if (parsedData.verificationCode !== otp) {
       return res.status(400).json({
@@ -124,15 +150,15 @@ export const verifyOtpController = async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(
-      parsedData.password,
-      10
-    );
+    // const hashedPassword = await bcrypt.hash(
+    //   parsedData.password,
+    //   10
+    // );
 
     // Create user
     const user = await User.create({
       email: parsedData.email,
-      password: hashedPassword,
+      password: parsedData.hashedPassword,
       isVerified: true
     });
 
@@ -170,6 +196,7 @@ export const verifyOtpController = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
+    console.log("sending token", accessToken)
     // =========================
     // SEND ACCESS TOKEN
     // =========================
@@ -177,9 +204,7 @@ export const verifyOtpController = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
-
-      accessToken,
-
+      accessToken: accessToken,
       user: {
         id: user._id,
         email: user.email
@@ -202,6 +227,7 @@ export const loginController = async (req, res) => {
   try {
 
     const { email, password } = req.body;
+    console.log("email", email)
 
     // =========================
     // VALIDATION
@@ -221,6 +247,7 @@ export const loginController = async (req, res) => {
     const user = await User.findOne({
       email
     });
+    console.log("users", user)
 
     if (!user) {
       return res.status(401).json({
@@ -237,6 +264,7 @@ export const loginController = async (req, res) => {
       password,
       user.password
     );
+    console.log("ismatch", isMatch)
 
     if (!isMatch) {
       return res.status(401).json({
@@ -264,7 +292,7 @@ export const loginController = async (req, res) => {
     // =========================
     // REFRESH TOKEN
     // =========================
-
+    console.log("inva")
     const refreshToken = crypto
       .randomBytes(64)
       .toString("hex");
