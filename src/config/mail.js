@@ -1,8 +1,11 @@
 import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
 let transporter;
 
 export const getTransporter = () => {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("send grid key", process.env.SENDGRID_API_KEY);
   if (!transporter) {
     transporter = nodemailer.createTransport({
       service: "gmail",
@@ -20,7 +23,7 @@ export const getTransporter = () => {
 
 export const sendOTP = (email, OTP) => {
   const message = {
-    from:process.env.GOOGLE_APP_EMAIL,
+    from: process.env.GOOGLE_APP_EMAIL,
     to: email,
     subject: "Email verification",
     text: `
@@ -34,3 +37,8 @@ export const sendOTP = (email, OTP) => {
 
   return message;
 }
+
+
+
+
+export { sgMail };
